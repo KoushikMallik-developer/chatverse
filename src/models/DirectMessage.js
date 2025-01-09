@@ -2,6 +2,11 @@ const mongoose = require('mongoose')
 
 const dmSchema = new mongoose.Schema(
     {
+        workspace: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Workspace',
+            required: true,
+        }, // The workspace the DM belongs to
         participants: [
             {
                 type: mongoose.Schema.Types.ObjectId,

@@ -7,6 +7,7 @@ const userRoutes = require('./src/routes/userRoutes')
 const errorHandler = require('./src/middlewares/errorHandler')
 const workspaceRoutes = require('./src/routes/workspaceRoutes')
 const channelRoutes = require('./src/routes/channelRoutes')
+const dmRoutes = require('./src/routes/dmRoutes')
 
 dotenv.config()
 
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/workspaces', workspaceRoutes)
 app.use('/api/channels', channelRoutes)
+app.use('/api/DMs', dmRoutes)
 
 // Error handler middleware
 app.use(errorHandler)
