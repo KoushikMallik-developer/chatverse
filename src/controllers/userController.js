@@ -3,7 +3,9 @@ const User = require('../models/User')
 // Get all users
 const getAllUsers = async (req, res, next) => {
     try {
-        const users = await User.find({}, { password: 0 }) // Exclude password
+        const users = await User.find({}, { password: 0 }).populate(
+            'workspaces'
+        ) // Exclude password
         res.json(users)
     } catch (error) {
         next(error)
@@ -13,15 +15,19 @@ const getAllUsers = async (req, res, next) => {
 // Update user
 const updateUser = async (req, res, next) => {
     try {
-        const { username } = req.params
-        const { password } = req.body
+        const { password, name } = req.body
 
-        const user = await User.findOne({ username })
+        const user = await User.findOne({ _id: req.user.id })
         if (!user) {
             return res.status(404).json({ message: 'User not found' })
         }
 
-        user.password = password
+        if (password && password.length > 4) {
+            user.password = password
+        }
+        if (name && name.length > 0) {
+            user.name = name
+        }
         await user.save()
 
         res.json({ message: 'User updated successfully' })
@@ -33,8 +39,7 @@ const updateUser = async (req, res, next) => {
 // Delete user
 const deleteUser = async (req, res, next) => {
     try {
-        const { username } = req.params
-        const result = await User.deleteOne({ username })
+        const result = await User.deleteOne({ _id: req.user.id })
 
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: 'User not found' })

@@ -10,8 +10,8 @@ const refreshTokens = []
 // Register user
 const register = async (req, res, next) => {
     try {
-        const { username, password } = req.body
-        const user = new User({ username, password })
+        const { email, password, name } = req.body
+        const user = new User({ email: email, password: password, name: name })
         await user.save()
         res.status(201).json({ message: 'User registered successfully' })
     } catch (error) {
@@ -22,8 +22,8 @@ const register = async (req, res, next) => {
 // Login user
 const login = async (req, res, next) => {
     try {
-        const { username, password } = req.body
-        const user = await User.findOne({ username })
+        const { email, password } = req.body
+        const user = await User.findOne({ email: email })
 
         if (!user || !(await user.comparePassword(password))) {
             return res.status(401).json({ message: 'Invalid credentials' })
@@ -47,7 +47,7 @@ const refreshToken = (req, res, next) => {
 
     try {
         const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)
-        const accessToken = generateAccessToken({ username: user.username })
+        const accessToken = generateAccessToken({ id: user.id })
         res.json({ accessToken })
     } catch (err) {
         next(err)

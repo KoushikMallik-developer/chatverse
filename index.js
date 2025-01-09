@@ -5,6 +5,8 @@ const dotenv = require('dotenv')
 const authRoutes = require('./src/routes/authRoutes')
 const userRoutes = require('./src/routes/userRoutes')
 const errorHandler = require('./src/middlewares/errorHandler')
+const workspaceRoutes = require('./src/routes/workspaceRoutes')
+const channelRoutes = require('./src/routes/channelRoutes')
 
 dotenv.config()
 
@@ -23,6 +25,8 @@ mongoose
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
+app.use('/api/workspaces', workspaceRoutes)
+app.use('/api/channels', channelRoutes)
 
 // Error handler middleware
 app.use(errorHandler)
