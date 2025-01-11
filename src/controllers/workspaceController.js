@@ -27,9 +27,10 @@ const getAllWorkspaces = async (req, res, next) => {
     try {
         const workspaces = await Workspace.find({
             $or: [{ owner: req.user._id }, { members: req.user._id }],
+        }).populate({
+            path: 'members',
+            select: 'email profilePicture name', // Specify the fields to populate
         })
-            .populate('owner', 'username')
-            .populate('members', 'username')
 
         res.json(workspaces)
     } catch (error) {
@@ -43,7 +44,7 @@ const updateWorkspace = async (req, res, next) => {
         const { id } = req.params
         const { name, description } = req.body
 
-        const workspace = await Workspace.findById(id)
+        const workspace = await Workspace.findById(id).populate('members')
         if (!workspace) {
             return res.status(404).json({ message: 'Workspace not found.' })
         }
@@ -82,11 +83,21 @@ const addMembersToWorkspace = async (req, res, next) => {
         }
 
         if (members) {
-            for (const member_id of members) {
-                const member = await User.findById(member_id)
+            for (const member_email of members) {
+                const member = await User.findOne({ email: member_email })
                 if (!member) {
                     return res.status(404).json({
                         message: 'Specified member is not a registered user',
+                    })
+                }
+                if (member.workspaces.includes(workspace.id)) {
+                    return res.status(400).json({
+                        message: 'User is already a member of the workspace',
+                    })
+                }
+                if (workspace.members.includes(member.id)) {
+                    return res.status(400).json({
+                        message: 'User is already a member of the workspace',
                     })
                 }
                 workspace.members.push(member.id)

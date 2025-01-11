@@ -9,7 +9,6 @@ const messageSchema = new mongoose.Schema(
             required: true,
         }, // Who sent the message
         channel: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }, // Belongs to a channel (optional)
-        dm: { type: mongoose.Schema.Types.ObjectId, ref: 'DirectMessage' }, // Belongs to a direct message (optional)
         reactions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Reaction' }], // Reactions to this message
     },
     { timestamps: true }

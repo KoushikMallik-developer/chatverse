@@ -1,6 +1,6 @@
-const DirectMessage = require('../models/DirectMessage')
 const User = require('../models/User')
 const Workspace = require('../models/Workspace')
+const Channel = require('../models/Channel')
 
 // Create a new direct message
 const createDM = async (req, res, next) => {
@@ -27,12 +27,17 @@ const createDM = async (req, res, next) => {
                 .json({ message: 'You are not a member of this workspace' })
         }
 
-        const dm = new DirectMessage({
+        const dm = new Channel({
+            name: 'Direct Message: ' + recipient._id + ' & ' + req.user.id,
+            type: 'dm',
             workspace: workspaceId,
-            participants: [recipientId, req.user._id],
+            members: [recipientId, req.user._id],
         })
 
         await dm.save()
+
+        workspace.channels.push(dm.id)
+        await workspace.save()
 
         res.status(201).json({
             message: 'Direct Message Channel created successfully',
@@ -48,10 +53,25 @@ const getDMs = async (req, res, next) => {
     try {
         const { workspaceId } = req.params
         user = await User.findById(req.user._id)
-        const dms = await DirectMessage.find({
+
+        workspace = await Workspace.findById(workspaceId)
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found' })
+        }
+
+        if (!workspace.members.includes(req.user._id)) {
+            return res
+                .status(403)
+                .json({ message: 'You are not a member of this workspace' })
+        }
+
+        const dms = await Channel.find({
             workspace: workspaceId,
-            participants: user.id,
+            members: user.id,
+            type: 'dm',
         })
+            .populate('members')
+            .populate('messages')
 
         res.json(dms)
     } catch (error) {
@@ -64,23 +84,36 @@ const deleteDM = async (req, res, next) => {
     try {
         const { dmId } = req.params
 
-        const dm = await DirectMessage.findById(dmId)
+        const dm = await Channel.findById(dmId)
 
         if (!dm) {
             return res
                 .status(404)
                 .json({ message: 'Direct message channel not found' })
         }
+        workshop = await Workspace.findById(dm.workspace)
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found' })
+        }
 
-        if (!dm.participants.includes(req.user._id)) {
+        if (!workspace.members.includes(req.user._id)) {
             return res
                 .status(403)
-                .json({
-                    message:
-                        'You are not a participant in this direct message channel',
-                })
+                .json({ message: 'You are not a member of this workspace' })
         }
+
+        if (!dm.members.includes(req.user._id)) {
+            return res.status(403).json({
+                message:
+                    'You are not a participant in this direct message channel',
+            })
+        }
+
+        workshop.channels.pull(dm.id)
+        await workshop.save()
+
         await dm.deleteOne()
+
         res.json({ message: 'Direct message channel deleted successfully' })
     } catch (error) {
         next(error)

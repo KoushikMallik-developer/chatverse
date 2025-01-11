@@ -11,7 +11,6 @@ const workspaceSchema = new mongoose.Schema(
         }, // Owner of the workspace
         members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Users in the workspace
         channels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }], // Channels in the workspace
-        dms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DirectMessage' }], // DMs in the workspace
     },
     { timestamps: true }
 )

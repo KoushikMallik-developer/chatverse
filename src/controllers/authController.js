@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
+const { validate_user_email, validate_name } = require('../utils/helpers')
 const {
     generateAccessToken,
     generateRefreshToken,
@@ -10,7 +11,31 @@ const refreshTokens = []
 // Register user
 const register = async (req, res, next) => {
     try {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
         const { email, password, name } = req.body
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: 'Invalid Email Format.' })
+        }
+        const existing_user = await User.findOne({ email: email })
+        if (existing_user) {
+            return res
+                .status(400)
+                .json({ message: 'User is already registered with us.' })
+        }
+
+        if (password.length < 4) {
+            return res.status(400).json({
+                message: 'Password must be at least 4 characters long',
+            })
+        }
+        if (!validate_name(name)) {
+            return res
+                .status(400)
+                .json({
+                    message:
+                        'Name must be at least 1 character long and only contain letters',
+                })
+        }
         const user = new User({ email: email, password: password, name: name })
         await user.save()
         res.status(201).json({ message: 'User registered successfully' })

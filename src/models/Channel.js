@@ -4,7 +4,11 @@ const channelSchema = new mongoose.Schema(
     {
         name: { type: String, required: true },
         description: { type: String },
-        type: { type: String, enum: ['public', 'private'], default: 'public' }, // Public or Private
+        type: {
+            type: String,
+            enum: ['public', 'private', 'dm'],
+            default: 'public',
+        }, // Public or Private
         workspace: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Workspace',

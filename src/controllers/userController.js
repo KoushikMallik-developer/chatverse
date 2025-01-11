@@ -51,4 +51,17 @@ const deleteUser = async (req, res, next) => {
     }
 }
 
-module.exports = { getAllUsers, updateUser, deleteUser }
+// Get user with token
+const getUserWithToken = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id, { password: 0 }) // Exclude password
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' })
+        }
+        res.json(user)
+    } catch (error) {
+        next(error)
+    }
+}
+
+module.exports = { getAllUsers, updateUser, deleteUser, getUserWithToken }
