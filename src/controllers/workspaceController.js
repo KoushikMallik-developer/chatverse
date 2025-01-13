@@ -119,8 +119,10 @@ const addMembersToWorkspace = async (req, res, next) => {
                 }
                 workspace.members.push(member.id)
                 for (const channel of workspace.channels) {
-                    channel.members.push(member.id)
-                    await channel.save()
+                    if (channel.type === 'public') {
+                        channel.members.push(member.id)
+                        await channel.save()
+                    }
                 }
                 member.workspaces.push(workspace.id)
                 await member.save()
@@ -152,11 +154,18 @@ const removeMembersFromWorkspace = async (req, res, next) => {
             return res.status(404).json({ message: 'Workspace not found' })
         }
 
-        if (workspace.owner.toString() !== req.user._id.toString()) {
-            return res.status(403).json({
-                message:
-                    'You are not authorized to add members to this workspace.',
-            })
+        if (
+            !(
+                members.length === 1 &&
+                req.user.id.toString() === members[0].toString()
+            )
+        ) {
+            if (workspace.owner.toString() !== req.user._id.toString()) {
+                return res.status(403).json({
+                    message:
+                        'You are not authorized to remove members from this workspace.',
+                })
+            }
         }
 
         if (members) {
@@ -179,6 +188,14 @@ const removeMembersFromWorkspace = async (req, res, next) => {
                         members: { $in: [member.id] },
                         workspace: workspace.id,
                     })
+                    const channels = await Channel.find({
+                        workspace: workspace.id,
+                        members: member.id,
+                    })
+                    for (const channel of channels) {
+                        channel.members.pull(member.id)
+                        await channel.save()
+                    }
                     workspace.members.pull(member.id)
                     member.workspaces.pull(workspace.id)
                     await member.save()
