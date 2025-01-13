@@ -27,6 +27,17 @@ const createDM = async (req, res, next) => {
                 .json({ message: 'You are not a member of this workspace' })
         }
 
+        existing_dm = await Channel.findOne({
+            workspace: workspaceId,
+            members: [recipientId, req.user._id],
+            type: 'dm',
+        })
+        if (existing_dm) {
+            return res.status(400).json({
+                message: 'Direct Message Channel already exists',
+            })
+        }
+
         const dm = new Channel({
             name: 'Direct Message: ' + recipient._id + ' & ' + req.user.id,
             type: 'dm',
@@ -38,10 +49,11 @@ const createDM = async (req, res, next) => {
 
         workspace.channels.push(dm.id)
         await workspace.save()
+        dm_with_members = await Channel.findById(dm.id).populate('members')
 
         res.status(201).json({
             message: 'Direct Message Channel created successfully',
-            dm,
+            dm: dm_with_members,
         })
     } catch (error) {
         next(error)

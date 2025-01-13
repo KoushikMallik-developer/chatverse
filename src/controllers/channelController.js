@@ -34,6 +34,8 @@ const createChannel = async (req, res, next) => {
         var channel_type = ''
         if (!['public', 'private'].includes(type)) {
             channel_type = 'public'
+        } else {
+            channel_type = type
         }
 
         const channel = new Channel({
@@ -72,8 +74,10 @@ const createChannel = async (req, res, next) => {
 const getAllChannels = async (req, res, next) => {
     try {
         const { workspaceId } = req.params
-        const workspace =
-            await Workspace.findById(workspaceId).populate('channels')
+        const workspace = await Workspace.findOne({
+            _id: workspaceId,
+            members: req.user._id,
+        }).populate('channels')
 
         if (!workspace.members.includes(req.user._id)) {
             return res
@@ -216,7 +220,10 @@ const removeMemberFromChannel = async (req, res, next) => {
         channel.members.pull(userId)
         await channel.save()
 
-        res.json({ message: 'User removed from channel successfully', channel })
+        res.json({
+            message: 'User removed from the channel successfully',
+            channel,
+        })
     } catch (error) {
         next(error)
     }

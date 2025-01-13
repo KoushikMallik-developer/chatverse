@@ -29,12 +29,10 @@ const register = async (req, res, next) => {
             })
         }
         if (!validate_name(name)) {
-            return res
-                .status(400)
-                .json({
-                    message:
-                        'Name must be at least 1 character long and only contain letters',
-                })
+            return res.status(400).json({
+                message:
+                    'Name must be at least 1 character long and only contain letters',
+            })
         }
         const user = new User({ email: email, password: password, name: name })
         await user.save()

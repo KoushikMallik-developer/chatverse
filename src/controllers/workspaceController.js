@@ -1,5 +1,6 @@
 const Workspace = require('../models/Workspace')
 const User = require('../models/User')
+const Channel = require('../models/Channel')
 
 // Create a new workspace
 const createWorkspace = async (req, res, next) => {
@@ -13,9 +14,16 @@ const createWorkspace = async (req, res, next) => {
         user.workspaces.push(workspace._id)
         await user.save()
 
+        const updated_workspace = await Workspace.findById(id)
+            .populate({
+                path: 'members',
+                select: 'email profilePicture name', // Specify the fields to populate
+            })
+            .populate('channels')
+
         res.status(201).json({
             message: 'Workspace created successfully',
-            workspace,
+            workspace: updated_workspace,
         })
     } catch (error) {
         next(error)
@@ -27,10 +35,12 @@ const getAllWorkspaces = async (req, res, next) => {
     try {
         const workspaces = await Workspace.find({
             $or: [{ owner: req.user._id }, { members: req.user._id }],
-        }).populate({
-            path: 'members',
-            select: 'email profilePicture name', // Specify the fields to populate
         })
+            .populate({
+                path: 'members',
+                select: 'email profilePicture name', // Specify the fields to populate
+            })
+            .populate('channels')
 
         res.json(workspaces)
     } catch (error) {
@@ -59,7 +69,14 @@ const updateWorkspace = async (req, res, next) => {
         workspace.description = description || workspace.description
 
         await workspace.save()
-        res.json({ message: 'Workspace updated successfully.', workspace })
+        const updated_workspace = await Workspace.findById(id).populate({
+            path: 'members',
+            select: 'email profilePicture name', // Specify the fields to populate
+        })
+        res.json({
+            message: 'Workspace updated successfully.',
+            workspace: updated_workspace,
+        })
     } catch (error) {
         next(error)
     }
@@ -67,10 +84,10 @@ const updateWorkspace = async (req, res, next) => {
 
 const addMembersToWorkspace = async (req, res, next) => {
     try {
-        const { id } = req.params
+        const { id } = req.params //WorkspaceID
         const { members } = req.body
 
-        const workspace = await Workspace.findById(id)
+        const workspace = await Workspace.findById(id).populate('channels')
         if (!workspace) {
             return res.status(404).json({ message: 'Workspace not found' })
         }
@@ -101,12 +118,25 @@ const addMembersToWorkspace = async (req, res, next) => {
                     })
                 }
                 workspace.members.push(member.id)
+                for (const channel of workspace.channels) {
+                    channel.members.push(member.id)
+                    await channel.save()
+                }
                 member.workspaces.push(workspace.id)
                 await member.save()
             }
         }
         await workspace.save()
-        res.json({ message: 'Members added successfully', workspace })
+        const updated_workspace = await Workspace.findById(id)
+            .populate({
+                path: 'members',
+                select: 'email profilePicture name', // Specify the fields to populate
+            })
+            .populate('channels')
+        res.json({
+            message: 'Members added successfully',
+            workspace: updated_workspace,
+        })
     } catch (error) {
         next(error)
     }
@@ -143,6 +173,12 @@ const removeMembersFromWorkspace = async (req, res, next) => {
                     })
                 }
                 if (member.workspaces.includes(workspace.id)) {
+                    // Remove all DM channels related to the removed member
+                    const dm_channels = await Channel.deleteMany({
+                        type: 'dm',
+                        members: { $in: [member.id] },
+                        workspace: workspace.id,
+                    })
                     workspace.members.pull(member.id)
                     member.workspaces.pull(workspace.id)
                     await member.save()
@@ -154,7 +190,16 @@ const removeMembersFromWorkspace = async (req, res, next) => {
                 }
             }
             await workspace.save()
-            res.json({ message: 'Members removed successfully.', workspace })
+            const updated_workspace = await Workspace.findById(id)
+                .populate({
+                    path: 'members',
+                    select: 'email profilePicture name', // Specify the fields to populate
+                })
+                .populate('channels')
+            res.json({
+                message: 'Members removed successfully.',
+                workspace: updated_workspace,
+            })
         }
     } catch (error) {
         next(error)
