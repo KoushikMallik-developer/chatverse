@@ -6,6 +6,11 @@ const Channel = require('../models/Channel')
 const createDM = async (req, res, next) => {
     try {
         const { recipientId, workspaceId } = req.body
+        if (req.user.id === recipientId) {
+            return res
+                .status(400)
+                .json({ message: 'You cannot create a DM with yourself' })
+        }
 
         const recipient = await User.findById(recipientId)
 

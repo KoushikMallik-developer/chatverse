@@ -14,7 +14,7 @@ const createWorkspace = async (req, res, next) => {
         user.workspaces.push(workspace._id)
         await user.save()
 
-        const updated_workspace = await Workspace.findById(id)
+        const updated_workspace = await Workspace.findById(workspace._id)
             .populate({
                 path: 'members',
                 select: 'email profilePicture name', // Specify the fields to populate
