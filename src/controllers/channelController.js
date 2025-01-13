@@ -74,22 +74,32 @@ const createChannel = async (req, res, next) => {
 const getAllChannels = async (req, res, next) => {
     try {
         const { workspaceId } = req.params
-        const workspace = await Workspace.findOne({
-            _id: workspaceId,
-            members: req.user._id,
-        }).populate('channels')
-
-        if (!workspace.members.includes(req.user._id)) {
-            return res
-                .status(403)
-                .json({ message: 'You are not a member of this workspace' })
+        var workspace = {}
+        try {
+            workspace = await Workspace.findOne({
+                _id: workspaceId,
+                members: req.user.id,
+            }).populate('channels')
+        } catch (error) {
+            return res.status(404).json({ message: 'Workspace not found' })
         }
 
         if (!workspace) {
             return res.status(404).json({ message: 'Workspace not found' })
         }
 
-        res.json(workspace.channels)
+        if (!workspace.members.includes(req.user.id)) {
+            return res
+                .status(403)
+                .json({ message: 'You are not a member of this workspace' })
+        }
+
+        const channels = await Channel.find({
+            workspace: workspaceId,
+            members: req.user.id,
+        })
+
+        res.json(channels)
     } catch (error) {
         next(error)
     }
