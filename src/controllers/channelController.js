@@ -155,15 +155,25 @@ const deleteChannel = async (req, res, next) => {
     try {
         const { channelId } = req.params
         const channel = await Channel.findById(channelId)
-
+        const workspace = await Workspace.findById(channel.workspace)
         if (!channel) {
             return res.status(404).json({ message: 'Channel not found' })
+        }
+
+        if (!workspace) {
+            return res.status(404).json({ message: 'Workspace not found' })
+        }
+
+        if (!workspace.members.includes(req.user._id)) {
+            return res
+                .status(403)
+                .json({ message: 'You are not a member of this workspace' })
         }
 
         if (!channel.members.includes(req.user._id)) {
             return res
                 .status(403)
-                .json({ message: 'You are not a member of this channel' })
+                .json({ message: 'You are not a member of this Channel' })
         }
 
         // Remove the channel from the workspace
@@ -187,6 +197,13 @@ const addMemberToChannel = async (req, res, next) => {
 
         const channel = await Channel.findById(channelId)
         const user = await User.findById(userId)
+        workspace = await Workspace.findById(channel.workspace)
+
+        if (!workspace.members.includes(user._id)) {
+            return res
+                .status(400)
+                .json({ message: 'You are not a member of this channel' })
+        }
 
         if (!channel || !user) {
             return res
