@@ -97,7 +97,7 @@ const getAllChannels = async (req, res, next) => {
         const channels = await Channel.find({
             workspace: workspaceId,
             members: req.user.id,
-        })
+        }).populate('members')
 
         res.json(channels)
     } catch (error) {
@@ -121,7 +121,13 @@ const getChannel = async (req, res, next) => {
                 .json({ message: 'You are not a member of this channel' })
         }
 
-        res.json(channel)
+        const updated_channel =
+            await Channel.findById(channelId).populate('members')
+
+        res.json({
+            channel: updated_channel,
+            message: 'Channel details fetched successfully',
+        })
     } catch (error) {
         next(error)
     }
@@ -144,7 +150,13 @@ const updateChannel = async (req, res, next) => {
 
         await channel.save()
 
-        res.json({ message: 'Channel updated successfully', channel })
+        const updated_channel =
+            await Channel.findById(channelId).populate('members')
+
+        res.json({
+            channel: updated_channel,
+            message: 'Channel updated successfully',
+        })
     } catch (error) {
         next(error)
     }
@@ -220,7 +232,13 @@ const addMemberToChannel = async (req, res, next) => {
         channel.members.push(userId)
         await channel.save()
 
-        res.json({ message: 'User added to channel successfully', channel })
+        const updated_channel =
+            await Channel.findById(channelId).populate('members')
+
+        res.json({
+            message: 'User added to channel successfully',
+            channel: updated_channel,
+        })
     } catch (error) {
         next(error)
     }
@@ -247,9 +265,11 @@ const removeMemberFromChannel = async (req, res, next) => {
         channel.members.pull(userId)
         await channel.save()
 
+        const updated_channel =
+            await Channel.findById(channelId).populate('members')
         res.json({
             message: 'User removed from the channel successfully',
-            channel,
+            channel: updated_channel,
         })
     } catch (error) {
         next(error)
