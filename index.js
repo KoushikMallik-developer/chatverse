@@ -11,6 +11,7 @@ const errorHandler = require('./src/middlewares/errorHandler')
 const workspaceRoutes = require('./src/routes/workspaceRoutes')
 const channelRoutes = require('./src/routes/channelRoutes')
 const dmRoutes = require('./src/routes/dmRoutes')
+const messageRoutes = require('./src/routes/messageRoutes')
 const setupSocket = require('./src/utils/socket')
 
 dotenv.config()
@@ -41,6 +42,7 @@ app.use('/api/users', userRoutes)
 app.use('/api/workspaces', workspaceRoutes)
 app.use('/api/channels', channelRoutes)
 app.use('/api/DMs', dmRoutes)
+app.use('/api/messages', messageRoutes)
 
 setupSocket(io)
 
