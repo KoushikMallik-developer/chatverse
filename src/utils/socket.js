@@ -1,9 +1,26 @@
 const Message = require('../models/Message')
 const Channel = require('../models/Channel')
 
+const onlineUsers = new Map()
 const setupSocket = (io) => {
     io.on('connection', (socket) => {
         console.log(`User connected: ${socket.id}`)
+
+        socket.on('user_online', async (user) => {
+            console.log(user + ' is online')
+            onlineUsers.set(socket.id, user)
+            io.emit('online_users', Array.from(onlineUsers.values()))
+        })
+
+        // Handle user disconnecting
+        socket.on('disconnect', async () => {
+            const user = onlineUsers.get(socket.id)
+            if (user) {
+                onlineUsers.delete(socket.id)
+                io.emit('online_users', Array.from(onlineUsers.values()))
+            }
+            console.log('A user disconnected:', socket.id)
+        })
 
         // Join a channel
         socket.on('joinChannel', async ({ channelId, user }) => {
@@ -59,6 +76,10 @@ const setupSocket = (io) => {
         // Disconnect
         socket.on('disconnect', () => {
             console.log(`User disconnected: ${socket.id}`)
+            onlineUsers.forEach(async (username) => {
+                onlineUsers.delete(username)
+            })
+            io.emit('online_users', Array.from(onlineUsers))
         })
     })
 }
