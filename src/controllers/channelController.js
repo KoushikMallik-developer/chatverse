@@ -1,6 +1,7 @@
 const Channel = require('../models/Channel')
 const Workspace = require('../models/Workspace')
 const User = require('../models/User')
+const Message = require('../models/Message')
 
 // Create a new channel
 const createChannel = async (req, res, next) => {
@@ -61,9 +62,13 @@ const createChannel = async (req, res, next) => {
         workspace.channels.push(channel._id)
         await workspace.save()
 
+        const updated_channel = await Channel.findById(channel._id).populate(
+            'members'
+        )
+
         res.status(201).json({
             message: 'Channel created successfully',
-            channel,
+            channel: updated_channel,
         })
     } catch (error) {
         next(error)
@@ -192,6 +197,7 @@ const deleteChannel = async (req, res, next) => {
         await Workspace.findByIdAndUpdate(channel.workspace, {
             $pull: { channels: channelId },
         })
+        await Message.deleteMany({ channel: channelId })
 
         await channel.deleteOne()
 
@@ -205,10 +211,10 @@ const deleteChannel = async (req, res, next) => {
 const addMemberToChannel = async (req, res, next) => {
     try {
         const { channelId } = req.params
-        const { userId } = req.body
+        const { userEmail } = req.body
 
         const channel = await Channel.findById(channelId)
-        const user = await User.findById(userId)
+        const user = await User.findOne({ email: userEmail })
         workspace = await Workspace.findById(channel.workspace)
 
         if (!workspace.members.includes(user._id)) {
@@ -223,13 +229,13 @@ const addMemberToChannel = async (req, res, next) => {
                 .json({ message: 'Channel or User not found' })
         }
 
-        if (channel.members.includes(userId)) {
+        if (channel.members.includes(user._id)) {
             return res
                 .status(400)
                 .json({ message: 'User is already a member of the channel' })
         }
 
-        channel.members.push(userId)
+        channel.members.push(user._id)
         await channel.save()
 
         const updated_channel =
@@ -248,7 +254,7 @@ const addMemberToChannel = async (req, res, next) => {
 const removeMemberFromChannel = async (req, res, next) => {
     try {
         const { channelId } = req.params
-        const { userId } = req.body
+        const { userEmail } = req.body
 
         const channel = await Channel.findById(channelId)
 
@@ -262,7 +268,18 @@ const removeMemberFromChannel = async (req, res, next) => {
                 .json({ message: 'User is not a member of the channel' })
         }
 
-        channel.members.pull(userId)
+        const user = await User.findOne({ email: userEmail })
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' })
+        }
+
+        if (!channel.members.includes(user._id)) {
+            return res
+                .status(400)
+                .json({ message: 'User is not a member of the channel' })
+        }
+
+        channel.members.pull(user._id)
         await channel.save()
 
         const updated_channel =
