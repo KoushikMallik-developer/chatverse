@@ -15,7 +15,7 @@ const messageRoutes = require('./src/routes/messageRoutes')
 const setupSocket = require('./src/utils/socket')
 
 dotenv.config()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 8000
 
 const app = express()
 const httpServer = createServer(app)
@@ -48,5 +48,5 @@ setupSocket(io)
 
 // Start server
 httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`)
+    console.log(`Server running on ${PORT}`)
 })
