@@ -12,27 +12,22 @@ const setupSocket = (io) => {
             io.emit('online_users', Array.from(onlineUsers.values()))
         })
 
-        // Handle user disconnecting
-        socket.on('disconnect', async () => {
-            const user = onlineUsers.get(socket.id)
-            if (user) {
-                onlineUsers.delete(socket.id)
-                io.emit('online_users', Array.from(onlineUsers.values()))
-            }
-            console.log('A user disconnected:', socket.id)
-        })
-
+        const isMemberOfRoom = (roomName) => {
+            return socket.rooms.has(roomName)
+        }
         // Join a channel
         socket.on('joinChannel', async ({ channelId, user }) => {
-            const channel = await Channel.findById(channelId)
-            if (channel) {
-                if (channel.members.includes(user._id)) {
-                    socket.join(channelId)
-                    const user_name = user.name
-                    console.log(`${user_name} joined channel: ${channelId}`)
-                    socket
-                        .to(channelId)
-                        .emit('userJoined', { user_name, channelId })
+            if (!isMemberOfRoom(channelId)) {
+                const channel = await Channel.findById(channelId)
+                if (channel) {
+                    if (channel.members.includes(user._id)) {
+                        socket.join(channelId)
+                        const user_name = user.name
+                        console.log(`${user_name} joined channel: ${channelId}`)
+                        socket
+                            .to(channelId)
+                            .emit('userJoined', { user_name, channelId })
+                    }
                 }
             }
         })
@@ -66,6 +61,11 @@ const setupSocket = (io) => {
                             message._id
                         ).populate('sender')
                         io.to(channelId).emit('newMessage', new_message)
+                        socket.to(channelId).emit('notification', {
+                            sender: senderId,
+                            message: content,
+                            channelId: channelId,
+                        })
                     }
                 }
             } catch (err) {
@@ -73,13 +73,14 @@ const setupSocket = (io) => {
             }
         })
 
-        // Disconnect
-        socket.on('disconnect', () => {
-            console.log(`User disconnected: ${socket.id}`)
-            onlineUsers.forEach(async (username) => {
-                onlineUsers.delete(username)
-            })
-            io.emit('online_users', Array.from(onlineUsers))
+        // Handle user disconnecting
+        socket.on('disconnect', async () => {
+            const user = onlineUsers.get(socket.id)
+            if (user) {
+                onlineUsers.delete(socket.id)
+                io.emit('online_users', Array.from(onlineUsers.values()))
+            }
+            console.log('A user disconnected:', socket.id)
         })
     })
 }
