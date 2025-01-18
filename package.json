@@ -4,7 +4,9 @@
     "description": "Backend for Chatverse Application",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "nodemon index.js",
+        "start": "node index.js"
     },
     "repository": {
         "type": "git",
@@ -25,7 +27,9 @@
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "jsonwebtoken": "^9.0.2",
-        "mongoose": "^8.9.3"
+        "mongoose": "^8.9.3",
+        "socket.io": "^4.8.1",
+        "uuid": "^11.0.4"
     },
     "devDependencies": {
         "nodemon": "^3.1.9"

@@ -1,10 +1,18 @@
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-})
+const userSchema = new mongoose.Schema(
+    {
+        email: { type: String, required: true, unique: true },
+        name: { type: String, required: true, default: '' },
+        password: { type: String, required: true },
+        profilePicture: { type: String }, // URL to profile picture
+        workspaces: [
+            { type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' },
+        ], // Many-to-Many with Workspace
+    },
+    { timestamps: true }
+)
 
 userSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
