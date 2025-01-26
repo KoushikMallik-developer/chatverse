@@ -284,6 +284,9 @@ const removeMemberFromChannel = async (req, res, next) => {
                 .status(400)
                 .json({ message: 'You are not a member of this channel' })
         }
+        if (channel.members.length <= 1) {
+            return res.status(400).json({ message: 'Channel cannot be empty' })
+        }
 
         channel.members.pull(user._id)
         await channel.save()

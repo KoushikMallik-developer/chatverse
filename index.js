@@ -23,6 +23,8 @@ const io = new Server(httpServer, {
     cors: {
         origin: '*', // Allow requests from any origin
     },
+    pingTimeout: 120000,
+    pingInterval: 30000,
 })
 
 // Middleware

@@ -105,8 +105,8 @@ const addMembersToWorkspace = async (req, res, next) => {
         }
 
         if (members) {
-            for (const member_email of members) {
-                const member = await User.findOne({ email: member_email })
+            for (const member_id of members) {
+                const member = await User.findById(member_id)
                 if (!member) {
                     return res.status(404).json({
                         message: 'Specified member is not a registered user',
