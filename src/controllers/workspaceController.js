@@ -8,6 +8,11 @@ const createWorkspace = async (req, res, next) => {
         const { name, description } = req.body
         const owner = req.user.id
         const user = await User.findById(owner)
+        if (!name || !description || name === '' || description === '') {
+            return res
+                .status(400)
+                .json({ message: 'Name and description are required.' })
+        }
         const members = [owner]
         const workspace = new Workspace({ name, description, owner, members })
         await workspace.save()
@@ -100,8 +105,8 @@ const addMembersToWorkspace = async (req, res, next) => {
         }
 
         if (members) {
-            for (const member_email of members) {
-                const member = await User.findOne({ email: member_email })
+            for (const member_id of members) {
+                const member = await User.findById(member_id)
                 if (!member) {
                     return res.status(404).json({
                         message: 'Specified member is not a registered user',

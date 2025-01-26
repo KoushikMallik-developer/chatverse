@@ -211,13 +211,13 @@ const deleteChannel = async (req, res, next) => {
 const addMemberToChannel = async (req, res, next) => {
     try {
         const { channelId } = req.params
-        const { userEmail } = req.body
+        const { userId } = req.body
 
         const channel = await Channel.findById(channelId)
-        const user = await User.findOne({ email: userEmail })
+        const user = await User.findById(userId)
         workspace = await Workspace.findById(channel.workspace)
 
-        if (!workspace.members.includes(user._id)) {
+        if (!workspace.members.includes(req.user.id)) {
             return res
                 .status(400)
                 .json({ message: 'You are not a member of this channel' })
@@ -227,6 +227,12 @@ const addMemberToChannel = async (req, res, next) => {
             return res
                 .status(404)
                 .json({ message: 'Channel or User not found' })
+        }
+
+        if (!workspace.members.includes(user._id)) {
+            return res
+                .status(400)
+                .json({ message: 'The user is not a member of this channel' })
         }
 
         if (channel.members.includes(user._id)) {
@@ -254,7 +260,7 @@ const addMemberToChannel = async (req, res, next) => {
 const removeMemberFromChannel = async (req, res, next) => {
     try {
         const { channelId } = req.params
-        const { userEmail } = req.body
+        const { userId } = req.body
 
         const channel = await Channel.findById(channelId)
 
@@ -262,21 +268,24 @@ const removeMemberFromChannel = async (req, res, next) => {
             return res.status(404).json({ message: 'Channel not found' })
         }
 
-        if (!channel.members.includes(userId)) {
-            return res
-                .status(400)
-                .json({ message: 'User is not a member of the channel' })
-        }
-
-        const user = await User.findOne({ email: userEmail })
+        const user = await User.findById(userId)
         if (!user) {
             return res.status(404).json({ message: 'User not found' })
         }
 
-        if (!channel.members.includes(user._id)) {
+        if (!channel.members.includes(userId)) {
             return res
                 .status(400)
-                .json({ message: 'User is not a member of the channel' })
+                .json({ message: 'User is not a member of this channel' })
+        }
+
+        if (!channel.members.includes(req.user.id)) {
+            return res
+                .status(400)
+                .json({ message: 'You are not a member of this channel' })
+        }
+        if (channel.members.length <= 1) {
+            return res.status(400).json({ message: 'Channel cannot be empty' })
         }
 
         channel.members.pull(user._id)
