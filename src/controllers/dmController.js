@@ -33,9 +33,18 @@ const createDM = async (req, res, next) => {
         }
 
         existing_dm = await Channel.findOne({
-            workspace: workspaceId,
-            members: [recipientId, req.user._id],
-            type: 'dm',
+            $or: [
+                {
+                    members: [recipientId, req.user._id],
+                    workspace: workspaceId,
+                    type: 'dm',
+                },
+                {
+                    members: [req.user._id, recipientId],
+                    workspace: workspaceId,
+                    type: 'dm',
+                },
+            ],
         })
         if (existing_dm) {
             return res.status(400).json({
